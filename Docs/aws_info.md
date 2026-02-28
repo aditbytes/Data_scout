@@ -109,35 +109,22 @@
 | 12 | Run App Locally & Test | ✅ Done |
 | 13 | Run Test Suite | ✅ Done |
 | 14 | Deploy with CloudFormation | ⏭️ Skipped (Manual infrastructure already built) |
-| 15 | Deploy to App Runner | ⬜ Pending |
+| 15 | Deploy to App Runner | ✅ Done |
 | 16 | Set Up CloudWatch Monitoring | ⬜ Pending |
 | 17 | Post-Deployment Verification | ⬜ Pending |
 
-
-Instructions for Step 15
-Go to the App Runner Console: Open Amazon App Runner in your browser.
-Create Service: Click the orange Create service button.
-Repository type: Select Source code repository.
-Connect GitHub: Click Add new (if not already connected) and authorize AWS App Runner to access your GitHub account. Select your DataScout repository and the main branch.
-Deployment Settings: Select Automatic (so it deploys automatically when you push git push). Click Next.
-Build Settings:
-Runtime: Python 3.11
-Build command: pip install -r requirements.txt
-Start command: streamlit run streamlit_app/app.py --server.port 8080 --server.address 0.0.0.0 --server.headless true
-Port: 8080
-Click Next.
-Configure service (Service name): Call it datascout-frontend-prod.
-Virtual CPU & Memory: Use the default or 1 vCPU, 2 GB RAM.
-Environment variables: Add the following to match your 
-
-.env
-:
-AWS_REGION: us-east-1
-S3_BUCKET: datascout-storage
-BEDROCK_AGENT_ID: 2V8KLCC97S
-BEDROCK_AGENT_ALIAS_ID: ADO5CA4VCF
-DYNAMODB_TABLE: datascout-queries
-ENABLE_DYNAMODB: true
-API_GATEWAY_URL: https://r19ewjwx53.execute-api.us-east-1.amazonaws.com/prod
-Security → Instance role: This is crucial! Select the DataScout-AppRunnerRole we created in Step 5.
-Click Next, then Create & deploy.
+## AWS App Runner (Step 15) ✅
+| Field | Value |
+|-------|-------|
+| Service Name | `datascout-frontend-prod` |
+| Service ID | `5f9c03404ba643e285b48f0b1e750e34` |
+| Service ARN | `arn:aws:apprunner:us-east-1:466492745516:service/datascout-frontend-prod/5f9c03404ba643e285b48f0b1e750e34` |
+| **Live URL** | **https://5bbar3sdza.us-east-1.awsapprunner.com** |
+| Source | `https://github.com/aditbytes/Data_scout` (branch: `main`) |
+| Auto Deploy | Enabled |
+| Runtime | Python 3.11 |
+| CPU / Memory | 1 vCPU / 2 GB |
+| Port | 8080 |
+| Instance Role | `DataScout-AppRunnerRole` |
+| Config Source | `apprunner.yaml` (in repo root) |
+| GitHub Connection | `datascout-github-connections` |

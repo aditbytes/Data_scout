@@ -105,7 +105,7 @@ def render_query_input(dataset_loaded: bool) -> Optional[str]:
     # Submit button — right-aligned
     col1, col2 = st.columns([5, 1])
     with col2:
-        submitted = st.button("🚀 Analyze", type="primary", use_container_width=True)
+        submitted = st.button("🚀 Analyze", type="primary", width="stretch")
 
     if submitted and query and query.strip():
         return query.strip()

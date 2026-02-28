@@ -37,7 +37,7 @@ def render_preview(metadata: dict) -> None:
         if preview_data:
             st.dataframe(
                 pd.DataFrame(preview_data),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True
             )
         else:

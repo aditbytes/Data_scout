@@ -267,7 +267,7 @@ def render_preview(metadata: dict) -> None:
 
     # Expandable preview
     with st.expander("Preview Dataset"):
-        st.dataframe(pd.DataFrame(metadata['preview']), use_container_width=True)
+        st.dataframe(pd.DataFrame(metadata['preview']), width="stretch")
 
         # Column info
         st.subheader("Column Details")
