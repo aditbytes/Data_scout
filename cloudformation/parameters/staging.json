@@ -1,0 +1,13 @@
+{
+    "Parameters": {
+        "BedrockAgentId": "REPLACE_WITH_STAGING_AGENT_ID",
+        "BedrockAgentAliasId": "REPLACE_WITH_STAGING_ALIAS_ID",
+        "GitHubRepoUrl": "https://github.com/org/datascout",
+        "EnvironmentName": "staging"
+    },
+    "Tags": {
+        "Environment": "staging",
+        "Project": "DataScout",
+        "CostCenter": "engineering"
+    }
+}

@@ -1,0 +1,10 @@
+streamlit>=1.25.0
+boto3>=1.26.0
+botocore>=1.29.0
+pandas>=1.5.0
+numpy>=1.23.0
+matplotlib>=3.5.0
+seaborn>=0.12.0
+python-dotenv>=1.0.0
+watchtower>=3.0.0
+openpyxl>=3.0.0

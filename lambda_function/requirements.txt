@@ -1,0 +1,4 @@
+# Lambda function dependencies
+# boto3 is pre-installed in the Lambda runtime but pinned here for local testing
+boto3>=1.26.0
+botocore>=1.29.0

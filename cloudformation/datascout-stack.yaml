@@ -1,0 +1,388 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: DataScout - Autonomous Enterprise Data Analyst
+
+Parameters:
+  BedrockAgentId:
+    Type: String
+    Description: ID of the pre-configured Bedrock Agent
+  BedrockAgentAliasId:
+    Type: String
+    Description: Alias ID of the Bedrock Agent
+  GitHubRepoUrl:
+    Type: String
+    Default: https://github.com/org/datascout
+    Description: GitHub repository URL for App Runner source
+  EnvironmentName:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, staging, prod]
+    Description: Deployment environment name
+
+Resources:
+  # ── S3 Storage Bucket ─────────────────────────────────────────────────────
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'datascout-storage-${AWS::AccountId}-${EnvironmentName}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteSessionData
+            Prefix: datasets/
+            Status: Enabled
+            ExpirationInDays: 7
+          - Id: DeleteArtifacts
+            Prefix: artifacts/
+            Status: Enabled
+            ExpirationInDays: 7
+          - Id: ArchiveLogs
+            Prefix: logs/
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 7
+                StorageClass: GLACIER
+            ExpirationInDays: 90
+
+  # ── IAM Role for App Runner ───────────────────────────────────────────────
+  AppRunnerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'DataScout-AppRunnerRole-${EnvironmentName}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: tasks.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonBedrockFullAccess
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:HeadObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt DataBucket.Arn
+                  - !Sub '${DataBucket.Arn}/*'
+        - PolicyName: CloudWatchAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt QueryTable.Arn
+
+  # ── App Runner Service ────────────────────────────────────────────────────
+  AppRunnerService:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: !Sub 'datascout-frontend-${EnvironmentName}'
+      SourceConfiguration:
+        AutoDeploymentsEnabled: true
+        CodeRepository:
+          RepositoryUrl: !Ref GitHubRepoUrl
+          SourceCodeVersion:
+            Type: BRANCH
+            Value: main
+          CodeConfiguration:
+            ConfigurationSource: API
+            CodeConfigurationValues:
+              Runtime: PYTHON_311
+              BuildCommand: pip install -r requirements.txt
+              StartCommand: !Sub >-
+                streamlit run streamlit_app/app.py
+                --server.port 8080
+                --server.address 0.0.0.0
+                --server.headless true
+              Port: '8080'
+              RuntimeEnvironmentVariables:
+                AWS_REGION: !Ref 'AWS::Region'
+                S3_BUCKET: !Ref DataBucket
+                BEDROCK_AGENT_ID: !Ref BedrockAgentId
+                BEDROCK_AGENT_ALIAS_ID: !Ref BedrockAgentAliasId
+      InstanceConfiguration:
+        Cpu: '1024'
+        Memory: '2048'
+        InstanceRoleArn: !GetAtt AppRunnerRole.Arn
+      HealthCheckConfiguration:
+        Protocol: HTTP
+        Path: /_stcore/health
+        Interval: 10
+        Timeout: 5
+        HealthyThreshold: 1
+        UnhealthyThreshold: 5
+
+  # ── CloudWatch Log Group ──────────────────────────────────────────────────
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/datascout/${EnvironmentName}/app'
+      RetentionInDays: 30
+
+  # ── DynamoDB Table ─────────────────────────────────────────────────────────
+  QueryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'datascout-queries-${EnvironmentName}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: session_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: session_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Project
+          Value: DataScout
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  # ── Lambda Execution Role ──────────────────────────────────────────────────
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'DataScout-LambdaRole-${EnvironmentName}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: BedrockAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeAgent
+                  - bedrock:InvokeModel
+                Resource: '*'
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt QueryTable.Arn
+        - PolicyName: S3ReadAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:HeadObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt DataBucket.Arn
+                  - !Sub '${DataBucket.Arn}/*'
+
+  # ── Lambda Function ────────────────────────────────────────────────────────
+  DataScoutLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'datascout-api-${EnvironmentName}'
+      Runtime: python3.11
+      Handler: handler.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 60
+      MemorySize: 256
+      Code:
+        ZipFile: |
+          # Placeholder — deploy actual code from lambda_function/handler.py
+          def lambda_handler(event, context):
+              return {'statusCode': 200, 'body': '{"status": "ok"}'}
+      Environment:
+        Variables:
+          AWS_REGION_NAME: !Ref 'AWS::Region'
+          BEDROCK_AGENT_ID: !Ref BedrockAgentId
+          BEDROCK_AGENT_ALIAS_ID: !Ref BedrockAgentAliasId
+          DYNAMODB_TABLE: !Ref QueryTable
+          S3_BUCKET: !Ref DataBucket
+      Tags:
+        - Key: Project
+          Value: DataScout
+
+  # ── API Gateway REST API ───────────────────────────────────────────────────
+  DataScoutApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub 'datascout-api-${EnvironmentName}'
+      Description: DataScout REST API — query analysis and history
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  # /health
+  HealthResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref DataScoutApi
+      ParentId: !GetAtt DataScoutApi.RootResourceId
+      PathPart: health
+
+  HealthGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref DataScoutApi
+      ResourceId: !Ref HealthResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DataScoutLambda.Arn}/invocations'
+
+  # /analyze
+  AnalyzeResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref DataScoutApi
+      ParentId: !GetAtt DataScoutApi.RootResourceId
+      PathPart: analyze
+
+  AnalyzePostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref DataScoutApi
+      ResourceId: !Ref AnalyzeResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DataScoutLambda.Arn}/invocations'
+
+  # /history/{session_id}
+  HistoryResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref DataScoutApi
+      ParentId: !GetAtt DataScoutApi.RootResourceId
+      PathPart: history
+
+  HistorySessionResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref DataScoutApi
+      ParentId: !Ref HistoryResource
+      PathPart: '{session_id}'
+
+  HistoryGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref DataScoutApi
+      ResourceId: !Ref HistorySessionResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DataScoutLambda.Arn}/invocations'
+
+  # Lambda Permission for API Gateway
+  ApiGatewayLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref DataScoutLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DataScoutApi}/*'
+
+  # API Gateway Deployment
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - HealthGetMethod
+      - AnalyzePostMethod
+      - HistoryGetMethod
+    Properties:
+      RestApiId: !Ref DataScoutApi
+
+  ApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref DataScoutApi
+      DeploymentId: !Ref ApiDeployment
+      StageName: !Ref EnvironmentName
+      Description: !Sub 'DataScout API — ${EnvironmentName}'
+
+Outputs:
+  AppUrl:
+    Description: DataScout application URL
+    Value: !GetAtt AppRunnerService.ServiceUrl
+    Export:
+      Name: !Sub 'DataScout-${EnvironmentName}-AppUrl'
+  BucketName:
+    Description: S3 storage bucket name
+    Value: !Ref DataBucket
+    Export:
+      Name: !Sub 'DataScout-${EnvironmentName}-BucketName'
+  AppRunnerRoleArn:
+    Description: App Runner execution role ARN
+    Value: !GetAtt AppRunnerRole.Arn
+  DynamoDBTableName:
+    Description: DynamoDB table for query history
+    Value: !Ref QueryTable
+    Export:
+      Name: !Sub 'DataScout-${EnvironmentName}-DynamoDBTable'
+  ApiGatewayUrl:
+    Description: API Gateway invoke URL
+    Value: !Sub 'https://${DataScoutApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}'
+    Export:
+      Name: !Sub 'DataScout-${EnvironmentName}-ApiUrl'
+  LambdaFunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt DataScoutLambda.Arn

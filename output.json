@@ -1,0 +1,1 @@
+{"statusCode": 200, "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Allow-Methods": "GET,POST,OPTIONS"}, "body": "{\"status\": \"ok\", \"service\": \"datascout-api\", \"region\": \"us-east-1\", \"timestamp\": \"2026-02-28T13:48:42.048077+00:00\"}"}
