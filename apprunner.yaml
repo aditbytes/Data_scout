@@ -1,0 +1,32 @@
+version: 1.0
+runtime: python311
+build:
+  commands:
+    pre-build:
+      - python3 -m pip install --upgrade pip
+    build:
+      - python3 -m pip install -r requirements.txt --target /app/vendor
+  env:
+    - name: PYTHONPATH
+      value: "/app/vendor"
+run:
+  command: python3 -m streamlit run streamlit_app/app.py --server.port 8080 --server.address 0.0.0.0 --server.headless true
+  network:
+    port: 8080
+  env:
+    - name: PYTHONPATH
+      value: "/app/vendor"
+    - name: AWS_REGION
+      value: "us-east-1"
+    - name: S3_BUCKET
+      value: "datascout-storage"
+    - name: BEDROCK_AGENT_ID
+      value: "2V8KLCC97S"
+    - name: BEDROCK_AGENT_ALIAS_ID
+      value: "ADO5CA4VCF"
+    - name: DYNAMODB_TABLE
+      value: "datascout-queries"
+    - name: ENABLE_DYNAMODB
+      value: "true"
+    - name: API_GATEWAY_URL
+      value: "https://r19ewjwx53.execute-api.us-east-1.amazonaws.com/prod"
