@@ -220,7 +220,10 @@ def main() -> None:
     if st.session_state.conversation_history:
         latest = st.session_state.conversation_history[-1]
         if latest['success']:
-            render_results(latest['response'])
+            render_results(
+                latest['response'],
+                execution_time_ms=latest.get('execution_time_ms', 0)
+            )
 
     # ── Section 5: Conversation History ───────────────────────────────────
     if len(st.session_state.conversation_history) > 1:
@@ -232,7 +235,10 @@ def main() -> None:
             status = "✅" if entry['success'] else "❌"
             time_str = f"{entry['execution_time_ms']}ms"
             with st.expander(f"{status} Q{i}: {entry['query']} ({time_str})"):
-                render_results(entry['response'])
+                render_results(
+                    entry['response'],
+                    execution_time_ms=entry.get('execution_time_ms', 0)
+                )
 
     # ── Footer ────────────────────────────────────────────────────────────
     render_footer()

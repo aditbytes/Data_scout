@@ -113,13 +113,15 @@
 | 16 | Set Up CloudWatch Monitoring | ⬜ Pending |
 | 17 | Post-Deployment Verification | ⬜ Pending |
 
-## AWS App Runner (Step 15) ✅
+## AWS App Runner (Step 15) ⚠️ REPLACED BY EC2
+> **Note:** App Runner does NOT support WebSocket connections, which Streamlit requires. Replaced with EC2 deployment below.
+
 | Field | Value |
 |-------|-------|
 | Service Name | `datascout-frontend-prod` |
 | Service ID | `5f9c03404ba643e285b48f0b1e750e34` |
 | Service ARN | `arn:aws:apprunner:us-east-1:466492745516:service/datascout-frontend-prod/5f9c03404ba643e285b48f0b1e750e34` |
-| **Live URL** | **https://5bbar3sdza.us-east-1.awsapprunner.com** |
+| ~~Live URL~~ | ~~https://5bbar3sdza.us-east-1.awsapprunner.com~~ (WebSockets not supported) |
 | Source | `https://github.com/aditbytes/Data_scout` (branch: `main`) |
 | Auto Deploy | Enabled |
 | Runtime | Python 3.11 |
@@ -128,3 +130,18 @@
 | Instance Role | `DataScout-AppRunnerRole` |
 | Config Source | `apprunner.yaml` (in repo root) |
 | GitHub Connection | `datascout-github-connections` |
+
+## Amazon EC2 (Step 15b — Replacement) ✅
+| Field | Value |
+|-------|-------|
+| Instance ID | `i-08724135da02b9455` |
+| Instance Type | `t3.micro` |
+| AMI | `ami-0f3caa1cf4417e51b` (Amazon Linux 2023) |
+| Availability Zone | `us-east-1a` |
+| Public IP | `13.221.158.225` |
+| **Live URL** | **http://13.221.158.225:8501** |
+| Key Pair | `datascout-key` |
+| Security Group | `datascout-ec2-sg` (`sg-082aa58b3782b109b`) |
+| Instance Profile | `DataScout-EC2Profile` |
+| IAM Role | `DataScout-EC2Role` |
+| Managed via | systemd service (`datascout.service`) |

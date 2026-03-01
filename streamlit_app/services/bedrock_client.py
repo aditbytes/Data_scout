@@ -83,15 +83,24 @@ class BedrockAgentClient:
             ]
 
         # ── Append output format hint ──────────────────────────────────────
-        # Keep the user's query as the primary focus; only append a brief
-        # format hint so the agent's own instructions handle the analysis.
+        # Request structured, detailed output with clear section markers.
         enhanced_query = (
             f"{query}\n\n"
-            "Please include in your response: "
-            "a brief explanation of your approach and key insights, "
-            "the Python code you used, "
-            "results displayed as a markdown table, "
-            "and generate a chart to visualize the results."
+            "Please provide a comprehensive analysis with these sections:\n"
+            "## Executive Summary\n"
+            "A 2-3 sentence overview of the most important findings.\n\n"
+            "## Methodology\n"
+            "Brief description of the analytical approach and techniques used.\n\n"
+            "## Key Findings\n"
+            "List the top 3-5 most important discoveries as bullet points "
+            "with specific numbers and percentages.\n\n"
+            "## Detailed Analysis\n"
+            "In-depth explanation with statistics, comparisons, and context. "
+            "Include results as a markdown table.\n\n"
+            "## Recommendations\n"
+            "2-3 actionable next steps based on the analysis.\n\n"
+            "Also include the Python code you used and generate a chart "
+            "to visualize the results."
         )
 
         response = self.client.invoke_agent(
@@ -167,19 +176,25 @@ class BedrockAgentClient:
     def _extract_components(self, text: str) -> Dict:
         """Extract structured components from the agent's text response.
 
-        Model-agnostic parser that handles multiple code block formats
-        (```python, ```py, bare ```) and provides a fallback when no
-        structured sections are found.
+        Model-agnostic parser that handles section-based output
+        (Executive Summary, Methodology, Key Findings, etc.) as well
+        as code blocks and S3 URIs.
 
         Args:
             text: Full text response from the agent.
 
         Returns:
-            Dict with keys: explanation, code, results, visualizations,
-            next_steps.
+            Dict with keys: explanation, executive_summary, methodology,
+            key_findings, detailed_analysis, recommendations, code,
+            results, visualizations, next_steps.
         """
         components = {
             'explanation': '',
+            'executive_summary': '',
+            'methodology': '',
+            'key_findings': [],
+            'detailed_analysis': '',
+            'recommendations': [],
             'code': '',
             'results': '',
             'visualizations': [],
@@ -187,67 +202,144 @@ class BedrockAgentClient:
         }
 
         # ── Extract code blocks (supports ```python, ```py, and bare ```)
-        # Try language-tagged blocks first, then fall back to bare blocks
         code_blocks = re.findall(
             r'```(?:python|py)\s*\n(.*?)```', text, re.DOTALL
         )
         if not code_blocks:
-            # Try bare code blocks (``` without language tag)
             code_blocks = re.findall(
                 r'```\s*\n(.*?)```', text, re.DOTALL
             )
-
         if code_blocks:
             components['code'] = code_blocks[-1].strip()
 
         # ── Extract S3 visualization URIs
-        # Nova Pro might omit the file extension or use markdown formats like ![chart](s3://...)
-        s3_uris = re.findall(r's3://[^\s\>\"\'\]\)]+', text)
+        s3_uris = re.findall(r's3://[^\s\>\"\'\'\]\)]+', text)
         components['visualizations'] = s3_uris
 
-        # ── Strip S3 references from text so they don't render as broken
-        # images in the browser (s3:// URLs are not browser-accessible).
-        # The images are properly downloaded and shown in the Charts tab.
+        # ── Strip S3 references from text
         cleaned_text = text
         if s3_uris:
-            # Remove markdown image references: ![alt](s3://...)
             cleaned_text = re.sub(
                 r'!\[[^\]]*\]\(s3://[^\)]+\)', '', cleaned_text
             )
-            # Remove bare S3 URIs (but keep surrounding text)
             for uri in s3_uris:
                 cleaned_text = cleaned_text.replace(uri, '')
-            # Clean up leftover empty lines from removals
             cleaned_text = re.sub(r'\n{3,}', '\n\n', cleaned_text)
 
-        # ── Split text around ALL code blocks for explanation and results
-        # Use a broad pattern that matches any fenced code block
-        parts = re.split(r'```(?:\w*)\s*\n.*?```', cleaned_text, flags=re.DOTALL)
+        # ── Remove code blocks from cleaned text for section extraction
+        text_no_code = re.sub(
+            r'```(?:\w*)\s*\n.*?```', '', cleaned_text, flags=re.DOTALL
+        ).strip()
 
-        if len(parts) >= 1 and parts[0].strip():
-            components['explanation'] = parts[0].strip()
-        if len(parts) >= 2:
-            # Combine all parts after the first code block as results
-            results_text = '\n'.join(p.strip() for p in parts[1:] if p.strip())
-            components['results'] = results_text
-
-        # ── Extract next steps / suggestions
-        next_steps_match = re.search(
-            r'(?:next\s*steps?|suggestions?|you\s*(?:can|could|might)\s*(?:also|try))[:\s]*\n'
-            r'((?:\s*[-•*\d.]+\s*.+\n?)+)',
-            text, re.IGNORECASE
+        # ── Extract structured sections using ## headers
+        self._extract_section(
+            text_no_code, components, 'executive_summary',
+            r'(?:##\s*(?:Executive\s+)?Summary)\s*\n(.*?)(?=\n##\s|$)'
         )
-        if next_steps_match:
-            steps_text = next_steps_match.group(1)
-            steps = re.findall(r'[-•*\d.]+\s*(.+)', steps_text)
-            components['next_steps'] = [s.strip() for s in steps if s.strip()]
+        self._extract_section(
+            text_no_code, components, 'methodology',
+            r'(?:##\s*(?:Methodology|Approach|Method))\s*\n(.*?)(?=\n##\s|$)'
+        )
+        self._extract_section(
+            text_no_code, components, 'detailed_analysis',
+            r'(?:##\s*(?:Detailed\s+)?Analysis)\s*\n(.*?)(?=\n##\s|$)'
+        )
 
-        # ── Fallback: if nothing was extracted, put the entire text as
-        # explanation so the user always sees the agent's response
+        # ── Key Findings: extract as list items
+        findings_match = re.search(
+            r'(?:##\s*(?:Key\s+)?Findings?)\s*\n(.*?)(?=\n##\s|$)',
+            text_no_code, re.DOTALL | re.IGNORECASE
+        )
+        if findings_match:
+            findings_text = findings_match.group(1)
+            findings = re.findall(r'[-•*]\s*(.+)', findings_text)
+            if not findings:
+                findings = re.findall(r'\d+\.\s*(.+)', findings_text)
+            components['key_findings'] = [f.strip() for f in findings if f.strip()]
+
+        # ── Recommendations
+        rec_match = re.search(
+            r'(?:##\s*(?:Recommendations?|Next\s+Steps?|Suggestions?))\s*\n(.*?)(?=\n##\s|$)',
+            text_no_code, re.DOTALL | re.IGNORECASE
+        )
+        if rec_match:
+            rec_text = rec_match.group(1)
+            recs = re.findall(r'[-•*]\s*(.+)', rec_text)
+            if not recs:
+                recs = re.findall(r'\d+\.\s*(.+)', rec_text)
+            components['recommendations'] = [r.strip() for r in recs if r.strip()]
+            components['next_steps'] = components['recommendations'][:5]
+
+        # ── Results: look for tables in the detailed analysis or results section
+        results_match = re.search(
+            r'(?:##\s*(?:Results?|Data|Output))\s*\n(.*?)(?=\n##\s|$)',
+            text_no_code, re.DOTALL | re.IGNORECASE
+        )
+        if results_match:
+            components['results'] = results_match.group(1).strip()
+
+        # If no dedicated results section, extract tables from detailed analysis
+        if not components['results']:
+            table_match = re.search(
+                r'(\|.+\|\n\|[-: |]+\|\n(?:\|.+\|\n?)+)',
+                text_no_code, re.MULTILINE
+            )
+            if table_match:
+                components['results'] = table_match.group(1).strip()
+
+        # ── Explanation: use text before the first ## section as general explanation
+        pre_section = re.split(r'\n##\s', text_no_code, maxsplit=1)
+        if pre_section and pre_section[0].strip():
+            components['explanation'] = pre_section[0].strip()
+
+        # ── If no structured sections found, use legacy fallback
+        has_structured = any([
+            components['executive_summary'],
+            components['key_findings'],
+            components['detailed_analysis']
+        ])
+
+        if not has_structured:
+            logger.info("No structured sections found; using fallback parsing")
+            # Legacy fallback: split around code blocks
+            parts = re.split(
+                r'```(?:\w*)\s*\n.*?```', cleaned_text, flags=re.DOTALL
+            )
+            if len(parts) >= 1 and parts[0].strip():
+                components['explanation'] = parts[0].strip()
+            if len(parts) >= 2:
+                results_text = '\n'.join(
+                    p.strip() for p in parts[1:] if p.strip()
+                )
+                components['results'] = results_text
+
+            # Extract next steps from unstructured text
+            next_steps_match = re.search(
+                r'(?:next\s*steps?|suggestions?|you\s*(?:can|could|might)\s*(?:also|try))[:\s]*\n'
+                r'((?:\s*[-•*\d.]+\s*.+\n?)+)',
+                text, re.IGNORECASE
+            )
+            if next_steps_match:
+                steps_text = next_steps_match.group(1)
+                steps = re.findall(r'[-•*\d.]+\s*(.+)', steps_text)
+                components['next_steps'] = [
+                    s.strip() for s in steps if s.strip()
+                ]
+
+        # ── Final fallback: always show something
         if (not components['explanation'] and
+                not components['executive_summary'] and
                 not components['code'] and
                 not components['results']):
-            logger.info("No structured components found; using raw text as explanation")
+            logger.info("No components found; using raw text as explanation")
             components['explanation'] = cleaned_text.strip()
 
         return components
+
+    @staticmethod
+    def _extract_section(text: str, components: dict,
+                         key: str, pattern: str) -> None:
+        """Extract a named section from text using a regex pattern."""
+        match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+        if match:
+            components[key] = match.group(1).strip()

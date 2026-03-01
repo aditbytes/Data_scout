@@ -572,6 +572,316 @@ hr {
     background: var(--ds-text-secondary);
 }
 
+/* =============================================================================
+   RESULTS DISPLAY — Enhanced Report Styles
+   ============================================================================= */
+
+/* ── Glass Card Fix: Prevent Overlap ─────────────────────────────────── */
+.glass-card {
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure markdown content inside glass cards doesn't overflow */
+.glass-card p,
+.glass-card li,
+.glass-card td,
+.glass-card th,
+.glass-card span {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Fix tabs inside glass cards — prevent text from bleeding outside */
+.glass-card .stTabs {
+    overflow: visible;
+}
+
+.glass-card .stTabs [data-baseweb="tab-panel"] {
+    padding: 1rem 0;
+    overflow-wrap: break-word;
+}
+
+/* ── Execution Stats Bar ─────────────────────────────────────────────── */
+.exec-stats-bar {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-sm);
+    margin-bottom: 1.25rem;
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.exec-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--ds-text-secondary);
+    font-weight: 500;
+}
+
+.exec-stat .stat-icon {
+    font-size: 0.9rem;
+}
+
+.exec-stat .stat-value {
+    color: var(--ds-text);
+    font-weight: 600;
+}
+
+.exec-stat .stat-divider {
+    width: 1px;
+    height: 14px;
+    background: var(--ds-border-strong);
+    margin: 0 4px;
+}
+
+/* ── Summary Card (Executive Summary) ────────────────────────────────── */
+.summary-card {
+    background: var(--ds-gradient-subtle);
+    border: 1px solid rgba(0, 212, 170, 0.15);
+    border-radius: var(--ds-radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+    animation: fadeInUp 0.5s ease-out 0.1s both;
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--ds-gradient);
+    border-radius: 4px 0 0 4px;
+}
+
+.summary-card .summary-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ds-cyan);
+    margin-bottom: 6px;
+}
+
+.summary-card .summary-text {
+    color: var(--ds-text);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    font-weight: 400;
+    overflow-wrap: break-word;
+}
+
+/* ── Report Section ──────────────────────────────────────────────────── */
+.report-section {
+    background: var(--ds-glass);
+    border: 1px solid var(--ds-glass-border);
+    border-radius: var(--ds-radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    backdrop-filter: blur(16px);
+    animation: fadeInUp 0.5s ease-out;
+    overflow-wrap: break-word;
+}
+
+.report-section:hover {
+    border-color: var(--ds-border-strong);
+}
+
+.report-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--ds-border);
+}
+
+.report-section-header .section-icon {
+    font-size: 1.2rem;
+}
+
+.report-section-header .section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ds-text);
+    letter-spacing: -0.01em;
+}
+
+.report-section-body {
+    color: var(--ds-text);
+    font-size: 0.88rem;
+    line-height: 1.75;
+}
+
+.report-section-body p {
+    margin-bottom: 0.75rem;
+    color: var(--ds-text);
+}
+
+.report-section-body strong {
+    color: var(--ds-cyan);
+}
+
+.report-section-body ul,
+.report-section-body ol {
+    padding-left: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.report-section-body li {
+    margin-bottom: 0.4rem;
+    color: var(--ds-text);
+    line-height: 1.6;
+}
+
+.report-section-body li::marker {
+    color: var(--ds-cyan);
+}
+
+/* ── Key Findings List ───────────────────────────────────────────────── */
+.finding-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-sm);
+    margin-bottom: 8px;
+    align-items: flex-start;
+    transition: var(--ds-transition);
+}
+
+.finding-item:hover {
+    border-color: var(--ds-border-strong);
+    background: var(--ds-surface-hover);
+}
+
+.finding-number {
+    min-width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ds-gradient);
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.finding-text {
+    color: var(--ds-text);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    overflow-wrap: break-word;
+}
+
+/* ── Methodology Block ───────────────────────────────────────────────── */
+.methodology-block {
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-border);
+    border-left: 3px solid var(--ds-accent);
+    border-radius: 0 var(--ds-radius-sm) var(--ds-radius-sm) 0;
+    padding: 14px 18px;
+    font-size: 0.86rem;
+    color: var(--ds-text-secondary);
+    line-height: 1.65;
+    margin-bottom: 1rem;
+}
+
+/* ── Recommendations Block ───────────────────────────────────────────── */
+.recommendation-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--ds-border);
+}
+
+.recommendation-item:last-child {
+    border-bottom: none;
+}
+
+.rec-icon {
+    color: var(--ds-cyan);
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.rec-text {
+    color: var(--ds-text);
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+/* ── Results Table Enhancement ───────────────────────────────────────── */
+.report-section .stMarkdown table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.75rem 0;
+}
+
+.report-section .stMarkdown th {
+    background: var(--ds-surface) !important;
+    color: var(--ds-text) !important;
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--ds-border-strong);
+    text-align: left;
+}
+
+.report-section .stMarkdown td {
+    padding: 8px 14px;
+    font-size: 0.84rem;
+    border-bottom: 1px solid var(--ds-border);
+    color: var(--ds-text);
+}
+
+.report-section .stMarkdown tr:hover td {
+    background: var(--ds-surface-hover);
+}
+
+/* ── Chart Gallery ───────────────────────────────────────────────────── */
+.chart-gallery-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.75rem;
+}
+
+.chart-gallery-header .chart-count {
+    background: var(--ds-glass-strong);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-pill);
+    padding: 2px 10px;
+    font-size: 0.72rem;
+    color: var(--ds-text-secondary);
+    font-weight: 600;
+}
+
+/* ── Section Divider ─────────────────────────────────────────────────── */
+.section-divider {
+    height: 1px;
+    background: var(--ds-border);
+    margin: 1.5rem 0;
+    opacity: 0.5;
+}
+
 /* ── Responsive: Tablet ───────────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .main .block-container {
