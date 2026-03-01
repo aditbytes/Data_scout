@@ -59,7 +59,7 @@ def render_results(response: dict, execution_time_ms: int = 0) -> None:
             <div class="exec-stat">
                 <span class="stat-icon">🤖</span>
                 <span>Model:</span>
-                <span class="stat-value">Amazon Nova Pro</span>
+                <span class="stat-value">Qwen3.5 - 397B-A17B</span>
             </div>
             <div class="exec-stat">
                 <span class="stat-icon">🔬</span>

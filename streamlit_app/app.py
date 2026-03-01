@@ -2,7 +2,7 @@
 DataScout — Main Application Entry Point.
 
 Streamlit-based frontend for autonomous enterprise data analysis
-powered by Amazon Nova Pro on Amazon Bedrock.
+powered by Qwen3.5 - 397B-A17B on Amazon Bedrock.
 """
 
 import sys
@@ -42,7 +42,7 @@ st.set_page_config(
         'Report a bug': 'mailto:support@datascout.ai',
         'About': (
             'DataScout v1.0 — Autonomous Enterprise Data Analyst\n'
-            'Powered by Amazon Nova Pro on Amazon Bedrock'
+            'Powered by Qwen3.5 - 397B-A17B on Amazon Bedrock'
         )
     }
 )
@@ -65,7 +65,7 @@ def render_hero() -> None:
         <div class="hero-title">Autonomous Data Intelligence</div>
         <div class="hero-subtitle">
             Upload your datasets, ask natural-language questions, and get
-            instant insights powered by Amazon Nova Pro
+            instant insights powered by Qwen3.5 - 397B-A17B
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -76,7 +76,7 @@ def render_footer() -> None:
     st.markdown("""
     <div class="app-footer">
         <span class="footer-brand">DataScout</span> v1.0 &nbsp;·&nbsp;
-        Powered by Amazon Nova Pro on Amazon Bedrock
+        Powered by Qwen3.5 - 397B-A17B on Amazon Bedrock
     </div>
     """, unsafe_allow_html=True)
 
