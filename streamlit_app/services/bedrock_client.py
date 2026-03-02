@@ -99,9 +99,8 @@ class BedrockAgentClient:
             "Include results as a markdown table.\n\n"
             "## Recommendations\n"
             "2-3 actionable next steps based on the analysis.\n\n"
-            "Also include the Python code you used and generate a chart "
-            "to visualize the results. If using Matplotlib, ensure you call "
-            "`plt.tight_layout()` so that long labels are not cut off."
+            "CRITICAL REQUIREMENT: You MUST include the Python code you used and you MUST generate at least one chart image for EVERY question to visualize the results. "
+            "If using Matplotlib, ensure you call `plt.tight_layout()` so that long labels are not cut off."
         )
 
         response = self.client.invoke_agent(
