@@ -75,7 +75,7 @@ def render_footer() -> None:
     """Render the modern footer with gradient branding."""
     st.markdown("""
     <div class="app-footer">
-        <span class="footer-brand">DataScout</span> betaversion 2 &nbsp;·&nbsp;
+        <span class="footer-brand">DataScout</span> Streamlit version 3 &nbsp;·&nbsp;
         Powered by Qwen3.5 - 397B-A17B on Amazon Bedrock
     </div>
     """, unsafe_allow_html=True)

@@ -5,6 +5,8 @@ Renders analysis results as a rich, vertically-stacked report with
 executive summary, key findings, detailed analysis, charts, and code.
 """
 
+from html import escape
+
 import streamlit as st
 
 try:
@@ -13,6 +15,13 @@ try:
 except ImportError:
     from streamlit_app.components.code_viewer import render_code_block
     from streamlit_app.components.visualization import render_visualization
+
+
+def _safe_html_text(text: str) -> str:
+    """Escape text for HTML injection and preserve line breaks."""
+    if not text:
+        return ''
+    return escape(text).replace('\n', '<br>')
 
 
 def render_results(response: dict, execution_time_ms: int = 0) -> None:
@@ -72,22 +81,26 @@ def render_results(response: dict, execution_time_ms: int = 0) -> None:
     # ── 1. Executive Summary Card ──────────────────────────────────────
     summary = response.get('executive_summary', '')
     if summary:
+        safe_summary = _safe_html_text(summary)
         st.markdown(f"""
         <div class="summary-card">
             <div class="summary-label">✨ Executive Summary</div>
-            <div class="summary-text">{summary}</div>
+            <div class="summary-text">{safe_summary}</div>
         </div>
         """, unsafe_allow_html=True)
 
     # ── 2. Key Findings ────────────────────────────────────────────────
     findings = response.get('key_findings', [])
+    if isinstance(findings, str):
+        findings = [findings]
     if findings:
         findings_html = ""
         for i, finding in enumerate(findings, 1):
+            safe_finding = _safe_html_text(str(finding))
             findings_html += f"""
 <div class="finding-item">
     <div class="finding-number">{i}</div>
-    <div class="finding-text">{finding}</div>
+    <div class="finding-text">{safe_finding}</div>
 </div>
 """
         st.markdown(f"""
@@ -105,13 +118,14 @@ def render_results(response: dict, execution_time_ms: int = 0) -> None:
     # ── 3. Methodology ─────────────────────────────────────────────────
     methodology = response.get('methodology', '')
     if methodology:
+        safe_methodology = _safe_html_text(methodology)
         st.markdown(f"""
         <div class="report-section">
             <div class="report-section-header">
                 <span class="section-icon">🧪</span>
                 <span class="section-title">Methodology</span>
             </div>
-            <div class="methodology-block">{methodology}</div>
+            <div class="methodology-block">{safe_methodology}</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -192,15 +206,20 @@ def render_results(response: dict, execution_time_ms: int = 0) -> None:
     # ── 8. Recommendations / Next Steps ────────────────────────────────
     recommendations = response.get('recommendations', [])
     next_steps = response.get('next_steps', [])
+    if isinstance(recommendations, str):
+        recommendations = [recommendations]
+    if isinstance(next_steps, str):
+        next_steps = [next_steps]
     steps = recommendations or next_steps
 
     if steps:
         recs_html = ""
         for step in steps:
+            safe_step = _safe_html_text(str(step))
             recs_html += f"""
 <div class="recommendation-item">
     <span class="rec-icon">💡</span>
-    <span class="rec-text">{step}</span>
+    <span class="rec-text">{safe_step}</span>
 </div>
 """
         st.markdown(f"""

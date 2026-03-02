@@ -8,6 +8,7 @@ Compatible with any Bedrock-supported model (Nova Pro, Claude, etc.).
 
 import logging
 import re
+from html import unescape
 from typing import Dict, List
 
 import boto3
@@ -252,10 +253,7 @@ class BedrockAgentClient:
         )
         if findings_match:
             findings_text = findings_match.group(1)
-            findings = re.findall(r'[-•*]\s*(.+)', findings_text)
-            if not findings:
-                findings = re.findall(r'\d+\.\s*(.+)', findings_text)
-            components['key_findings'] = [f.strip() for f in findings if f.strip()]
+            components['key_findings'] = self._extract_list_items(findings_text)
 
         # ── Recommendations
         rec_match = re.search(
@@ -264,10 +262,7 @@ class BedrockAgentClient:
         )
         if rec_match:
             rec_text = rec_match.group(1)
-            recs = re.findall(r'[-•*]\s*(.+)', rec_text)
-            if not recs:
-                recs = re.findall(r'\d+\.\s*(.+)', rec_text)
-            components['recommendations'] = [r.strip() for r in recs if r.strip()]
+            components['recommendations'] = self._extract_list_items(rec_text)
             components['next_steps'] = components['recommendations'][:5]
 
         # ── Results: look for tables in the detailed analysis or results section
@@ -334,6 +329,19 @@ class BedrockAgentClient:
             logger.info("No components found; using raw text as explanation")
             components['explanation'] = cleaned_text.strip()
 
+        # ── Normalize text fields and de-duplicate list fields
+        for key in ['explanation', 'executive_summary', 'methodology',
+                    'detailed_analysis', 'results']:
+            components[key] = self._clean_text(components[key])
+        components['key_findings'] = self._dedupe_preserve_order(
+            [self._clean_text(x) for x in components['key_findings'] if x]
+        )
+        components['recommendations'] = self._dedupe_preserve_order(
+            [self._clean_text(x) for x in components['recommendations'] if x]
+        )
+        if components['recommendations'] and not components['next_steps']:
+            components['next_steps'] = components['recommendations'][:5]
+
         return components
 
     @staticmethod
@@ -343,3 +351,77 @@ class BedrockAgentClient:
         match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
         if match:
             components[key] = match.group(1).strip()
+
+    @staticmethod
+    def _clean_text(text: str) -> str:
+        """Normalize model text output and strip accidental HTML wrappers."""
+        if not text:
+            return ''
+
+        cleaned = unescape(text).replace('\r\n', '\n').replace('\r', '\n')
+        cleaned = re.sub(r'<\s*br\s*/?\s*>', '\n', cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(
+            r'</\s*(?:div|p|li|ul|ol|section|article|h\d)\s*>',
+            '\n',
+            cleaned,
+            flags=re.IGNORECASE
+        )
+        cleaned = re.sub(r'<[^>]+>', '', cleaned)
+        cleaned = cleaned.replace('```', '')
+        cleaned = re.sub(r'[ \t]+\n', '\n', cleaned)
+        cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+        return cleaned.strip()
+
+    def _extract_list_items(self, section_text: str) -> List[str]:
+        """Extract bullets from markdown or lightweight HTML list content."""
+        if not section_text:
+            return []
+
+        items: List[str] = []
+
+        # HTML list items
+        html_li_items = re.findall(
+            r'<li[^>]*>(.*?)</li>', section_text, re.DOTALL | re.IGNORECASE
+        )
+        items.extend(self._clean_text(item) for item in html_li_items if item.strip())
+
+        # Custom finding-text blocks occasionally returned by the model
+        custom_finding_items = re.findall(
+            r'class=["\']finding-text["\'][^>]*>(.*?)</[^>]+>',
+            section_text,
+            re.DOTALL | re.IGNORECASE
+        )
+        items.extend(
+            self._clean_text(item) for item in custom_finding_items if item.strip()
+        )
+
+        # Markdown bullets / numbered lists
+        cleaned_block = self._clean_text(section_text)
+        markdown_items = re.findall(
+            r'^\s*(?:[-*•]+|\d+[.)])\s+(.+)$',
+            cleaned_block,
+            re.MULTILINE
+        )
+        items.extend(self._clean_text(item) for item in markdown_items if item.strip())
+
+        # Last-resort split by non-empty lines (ignoring standalone numbers)
+        if not items and cleaned_block:
+            for line in cleaned_block.splitlines():
+                line = line.strip().strip('-*•')
+                if not line or re.fullmatch(r'\d+[.)]?', line):
+                    continue
+                if len(line.split()) >= 3:
+                    items.append(line)
+
+        return self._dedupe_preserve_order(items)
+
+    @staticmethod
+    def _dedupe_preserve_order(items: List[str]) -> List[str]:
+        """De-duplicate while preserving original order."""
+        seen = set()
+        deduped = []
+        for item in items:
+            if item and item not in seen:
+                deduped.append(item)
+                seen.add(item)
+        return deduped

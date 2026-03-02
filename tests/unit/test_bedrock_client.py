@@ -162,3 +162,31 @@ class TestBedrockAgentClient:
 
         assert len(result['visualizations']) == 1
         assert 'chart.jpg' in result['visualizations'][0]
+
+    def test_parse_response_extracts_findings_from_html(self, client):
+        """Verify HTML-ish findings are converted to plain list items."""
+        text = (
+            "## Key Findings\n"
+            '<div class="finding-item"><div class="finding-number">1</div>'
+            '<div class="finding-text">MSI has the highest price in the dataset.</div></div>\n'
+            '<div class="finding-item"><div class="finding-number">2</div>'
+            '<div class="finding-text">Apple appears multiple times in top priced rows.</div></div>\n'
+        )
+        result = client._extract_components(text)
+
+        assert len(result['key_findings']) == 2
+        assert all('<div' not in finding for finding in result['key_findings'])
+        assert 'MSI has the highest price' in result['key_findings'][0]
+
+    def test_parse_response_cleans_html_from_sections(self, client):
+        """Verify section text strips accidental HTML wrappers."""
+        text = (
+            "## Executive Summary\n"
+            "<div><p>Summary with <strong>bold</strong> text.</p></div>\n\n"
+            "## Methodology\n"
+            "<p>Sorted by price and selected top 10 rows.</p>\n"
+        )
+        result = client._extract_components(text)
+
+        assert result['executive_summary'] == 'Summary with bold text.'
+        assert result['methodology'] == 'Sorted by price and selected top 10 rows.'

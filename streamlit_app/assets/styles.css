@@ -152,9 +152,10 @@ h3 {
 }
 
 p,
-span,
-div,
-label {
+label,
+input,
+textarea,
+button {
     font-family: 'Inter', sans-serif !important;
 }
 
@@ -482,6 +483,11 @@ label {
     background: var(--ds-surface) !important;
     border: 1px solid var(--ds-border) !important;
     border-radius: var(--ds-radius-sm) !important;
+}
+
+/* Preserve Material icon ligatures inside expander toggles */
+[data-testid="stExpanderToggleIcon"] span {
+    font-family: 'Material Symbols Rounded' !important;
 }
 
 /* ── Code Block ───────────────────────────────────────────────────────────── */
@@ -893,6 +899,21 @@ hr {
     font-size: 0.72rem;
     color: var(--ds-text-secondary);
     font-weight: 600;
+}
+
+/* Keep generated charts visually contained and responsive */
+[data-testid="stImage"] {
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-sm);
+    padding: 0.75rem;
+    margin: 0.75rem 0;
+}
+
+[data-testid="stImage"] img {
+    border-radius: calc(var(--ds-radius-sm) - 2px);
+    max-height: 560px;
+    object-fit: contain;
 }
 
 /* ── Section Divider ─────────────────────────────────────────────────── */
