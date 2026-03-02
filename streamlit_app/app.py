@@ -18,6 +18,7 @@ for _p in [str(_script_dir), str(_project_root)]:
 
 import streamlit as st
 import uuid
+import random
 from datetime import datetime, UTC
 
 from config import Config
@@ -71,11 +72,207 @@ def render_hero() -> None:
     """, unsafe_allow_html=True)
 
 
+def render_night_sky_theme(seed: str) -> None:
+    """Inject a lightweight animated night-sky background layer."""
+    rng = random.Random(seed)
+
+    stars_html = []
+    for _ in range(72):
+        left = rng.uniform(0, 100)
+        top = rng.uniform(0, 82)
+        size = rng.uniform(1.0, 3.2)
+        opacity = rng.uniform(0.30, 0.95)
+        delay = rng.uniform(0, 8)
+        duration = rng.uniform(2.8, 7.0)
+        stars_html.append(
+            '<span class="sky-star" '
+            f'style="left:{left:.2f}%;top:{top:.2f}%;'
+            f'width:{size:.2f}px;height:{size:.2f}px;'
+            f'opacity:{opacity:.2f};animation-delay:-{delay:.2f}s;'
+            f'animation-duration:{duration:.2f}s;"></span>'
+        )
+
+    shooting_html = []
+    for _ in range(2):
+        top = rng.uniform(8, 34)
+        left = rng.uniform(62, 98)
+        delay = rng.uniform(0.5, 7.5)
+        duration = rng.uniform(8.0, 12.0)
+        shooting_html.append(
+            '<span class="shooting-star" '
+            f'style="top:{top:.2f}%;left:{left:.2f}%;'
+            f'animation-delay:{delay:.2f}s;animation-duration:{duration:.2f}s;"></span>'
+        )
+
+    st.markdown(
+        f"""
+        <style>
+        .night-sky-layer {{
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(circle at 18% 16%, rgba(18, 53, 92, 0.26), transparent 42%),
+                radial-gradient(circle at 82% 8%, rgba(30, 88, 132, 0.18), transparent 38%),
+                linear-gradient(180deg, #030712 0%, #050b16 45%, #06070b 100%);
+        }}
+
+        .stApp,
+        [data-testid="stAppViewContainer"] {{
+            position: relative;
+        }}
+
+        .main .block-container,
+        .app-footer {{
+            position: relative;
+            z-index: 2;
+        }}
+
+        .sky-star {{
+            position: absolute;
+            border-radius: 50%;
+            background: #f5f9ff;
+            box-shadow: 0 0 8px rgba(214, 235, 255, 0.8);
+            animation-name: dsTwinkle;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: infinite;
+            will-change: opacity, transform;
+        }}
+
+        @keyframes dsTwinkle {{
+            0%, 100% {{
+                opacity: 0.2;
+                transform: scale(0.85);
+            }}
+            50% {{
+                opacity: 1;
+                transform: scale(1.35);
+            }}
+        }}
+
+        .moon-glow {{
+            position: absolute;
+            top: 38px;
+            right: 46px;
+            width: 118px;
+            height: 118px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, rgba(210, 233, 255, 0.55), rgba(132, 179, 235, 0.10) 62%, transparent 70%);
+            filter: blur(2px);
+        }}
+
+        .moon {{
+            position: absolute;
+            top: 56px;
+            right: 66px;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 32% 30%, #f9fdff 0%, #d7e9fb 55%, #bfd6ec 100%);
+            box-shadow: 0 0 16px rgba(198, 230, 255, 0.65);
+        }}
+
+        .shooting-star {{
+            position: absolute;
+            width: 140px;
+            height: 2px;
+            opacity: 0;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.0), rgba(193, 230, 255, 0.95), rgba(255, 255, 255, 0.0));
+            transform: rotate(-28deg);
+            animation-name: dsShoot;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            will-change: opacity, transform;
+        }}
+
+        @keyframes dsShoot {{
+            0% {{
+                opacity: 0;
+                transform: translate3d(0, 0, 0) rotate(-28deg) scaleX(0.35);
+            }}
+            8% {{
+                opacity: 0.85;
+            }}
+            38% {{
+                opacity: 0.75;
+                transform: translate3d(-420px, 230px, 0) rotate(-28deg) scaleX(1);
+            }}
+            100% {{
+                opacity: 0;
+                transform: translate3d(-420px, 230px, 0) rotate(-28deg) scaleX(0.85);
+            }}
+        }}
+
+        .skyline {{
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 150px;
+            background: linear-gradient(180deg, rgba(4, 6, 10, 0.05) 0%, rgba(4, 7, 12, 0.9) 36%, #03050a 100%);
+            clip-path: polygon(
+                0% 100%, 0% 62%, 4% 62%, 4% 52%, 7% 52%, 7% 68%, 11% 68%, 11% 45%, 16% 45%, 16% 73%,
+                20% 73%, 20% 57%, 24% 57%, 24% 70%, 28% 70%, 28% 43%, 33% 43%, 33% 74%, 38% 74%, 38% 56%,
+                43% 56%, 43% 72%, 48% 72%, 48% 41%, 54% 41%, 54% 76%, 58% 76%, 58% 54%, 63% 54%, 63% 71%,
+                68% 71%, 68% 47%, 73% 47%, 73% 75%, 77% 75%, 77% 52%, 82% 52%, 82% 72%, 87% 72%, 87% 44%,
+                92% 44%, 92% 68%, 96% 68%, 96% 58%, 100% 58%, 100% 100%
+            );
+        }}
+
+        .skyline::after {{
+            content: "";
+            position: absolute;
+            inset: 0;
+            opacity: 0.12;
+            background:
+                repeating-linear-gradient(90deg, transparent 0 10px, rgba(178, 213, 240, 0.45) 10px 11px, transparent 11px 24px),
+                linear-gradient(180deg, transparent 0%, rgba(170, 205, 230, 0.32) 62%, transparent 100%);
+        }}
+
+        @media (max-width: 768px) {{
+            .moon-glow {{
+                top: 28px;
+                right: 24px;
+                width: 94px;
+                height: 94px;
+            }}
+
+            .moon {{
+                top: 42px;
+                right: 40px;
+                width: 56px;
+                height: 56px;
+            }}
+
+            .skyline {{
+                height: 110px;
+            }}
+
+            .shooting-star {{
+                width: 92px;
+            }}
+        }}
+        </style>
+        <div class="night-sky-layer" aria-hidden="true">
+            <div class="moon-glow"></div>
+            <div class="moon"></div>
+            {''.join(stars_html)}
+            {''.join(shooting_html)}
+            <div class="skyline"></div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
 def render_footer() -> None:
     """Render the modern footer with gradient branding."""
     st.markdown("""
     <div class="app-footer">
-        <span class="footer-brand">DataScout</span> version 4 &nbsp;·&nbsp;
+        <span class="footer-brand">DataScout</span> version 5 (beta) &nbsp;·&nbsp;
         Powered by Qwen3.5 - 397B-A17B on Amazon Bedrock
     </div>
     """, unsafe_allow_html=True)
@@ -107,6 +304,9 @@ def main() -> None:
 
     # Initialize session
     initialize_session()
+
+    # Render ambient background layer before UI components.
+    render_night_sky_theme(st.session_state.session_id)
 
     # Initialize services
     bedrock = BedrockAgentClient()
