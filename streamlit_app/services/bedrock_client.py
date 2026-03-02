@@ -8,6 +8,7 @@ Compatible with any Bedrock-supported model (Nova Pro, Claude, etc.).
 
 import logging
 import re
+import hashlib
 from html import unescape
 from typing import Dict, List
 
@@ -101,6 +102,7 @@ class BedrockAgentClient:
             "## Recommendations\n"
             "2-3 actionable next steps based on the analysis.\n\n"
             "CRITICAL REQUIREMENT: You MUST include the Python code you used and you MUST generate at least one chart image for EVERY question to visualize the results. "
+            "Generate exactly ONE most relevant chart by default. Only generate multiple charts if the user explicitly asks for multiple chart views. "
             "If using Matplotlib, ensure you call `plt.tight_layout()` so that long labels are not cut off."
         )
 
@@ -152,6 +154,7 @@ class BedrockAgentClient:
                         logger.info("Captured chart image: %s (%d bytes)",
                                     file_name, len(file_bytes))
 
+        chart_images = self._dedupe_chart_images(chart_images)
         full_text = ''.join(chunks)
 
         # Log raw response for debugging — critical when switching models
@@ -215,7 +218,7 @@ class BedrockAgentClient:
 
         # ── Extract S3 visualization URIs
         s3_uris = re.findall(r's3://[^\s\>\"\'\'\]\)]+', text)
-        components['visualizations'] = s3_uris
+        components['visualizations'] = self._dedupe_preserve_order(s3_uris)
 
         # ── Strip S3 references from text
         cleaned_text = text
@@ -424,4 +427,20 @@ class BedrockAgentClient:
             if item and item not in seen:
                 deduped.append(item)
                 seen.add(item)
+        return deduped
+
+    @staticmethod
+    def _dedupe_chart_images(chart_images: list) -> list:
+        """Remove duplicate chart images based on image bytes hash."""
+        seen_hashes = set()
+        deduped = []
+        for image in chart_images:
+            image_bytes = image.get('bytes', b'')
+            if not image_bytes:
+                continue
+            image_hash = hashlib.sha256(image_bytes).hexdigest()
+            if image_hash in seen_hashes:
+                continue
+            seen_hashes.add(image_hash)
+            deduped.append(image)
         return deduped

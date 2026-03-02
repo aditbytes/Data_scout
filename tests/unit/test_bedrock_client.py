@@ -131,6 +131,19 @@ class TestBedrockAgentClient:
 
         assert len(result['visualizations']) == 2
 
+    def test_parse_response_dedupes_visualization_uris(self, client):
+        """Verify duplicate S3 chart URIs are de-duplicated."""
+        text = (
+            'Chart 1: s3://bucket/chart1.png\n'
+            'Chart 1 duplicate: s3://bucket/chart1.png\n'
+            'Chart 2: s3://bucket/chart2.png'
+        )
+        result = client._extract_components(text)
+
+        assert len(result['visualizations']) == 2
+        assert result['visualizations'][0].endswith('chart1.png')
+        assert result['visualizations'][1].endswith('chart2.png')
+
     def test_parse_response_empty_response(self, client):
         """Verify empty response returns a helpful message."""
         mock_response = {
@@ -140,6 +153,33 @@ class TestBedrockAgentClient:
         result = client._parse_response(mock_response)
 
         assert 'empty response' in result['explanation'].lower()
+
+    def test_parse_response_dedupes_chart_images(self, client):
+        """Verify duplicate streamed chart images are de-duplicated."""
+        shared_bytes = b'fake-png-bytes'
+        mock_response = {
+            'completion': [
+                {'chunk': {'bytes': b'Analysis text'}},
+                {
+                    'files': {
+                        'files': [
+                            {'bytes': shared_bytes, 'name': 'chart1.png', 'type': 'image/png'}
+                        ]
+                    }
+                },
+                {
+                    'files': {
+                        'files': [
+                            {'bytes': shared_bytes, 'name': 'chart1_copy.png', 'type': 'image/png'}
+                        ]
+                    }
+                }
+            ],
+            'sessionId': 'test'
+        }
+        result = client._parse_response(mock_response)
+
+        assert len(result['chart_images']) == 1
 
     def test_parse_response_extracts_next_steps(self, client):
         """Verify next steps are extracted from bulleted lists."""
