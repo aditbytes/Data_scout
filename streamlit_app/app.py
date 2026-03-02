@@ -41,7 +41,7 @@ st.set_page_config(
         'Get Help': 'https://docs.datascout.ai',
         'Report a bug': 'mailto:support@datascout.ai',
         'About': (
-            'DataScout v1.0 — Autonomous Enterprise Data Analyst\n'
+            'DataScout betaversion 2 — Autonomous Enterprise Data Analyst\n'
             'Powered by Qwen3.5 - 397B-A17B on Amazon Bedrock'
         )
     }
@@ -75,7 +75,7 @@ def render_footer() -> None:
     """Render the modern footer with gradient branding."""
     st.markdown("""
     <div class="app-footer">
-        <span class="footer-brand">DataScout</span> v1.0 &nbsp;·&nbsp;
+        <span class="footer-brand">DataScout</span> betaversion 2 &nbsp;·&nbsp;
         Powered by Qwen3.5 - 397B-A17B on Amazon Bedrock
     </div>
     """, unsafe_allow_html=True)
