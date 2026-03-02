@@ -8,39 +8,39 @@
 
 /* ── CSS Custom Properties (Dark Design Tokens) ───────────────────────────── */
 :root {
-    --ds-bg: #0D1117;
-    --ds-bg-alt: #0A0E14;
-    --ds-surface: #161B22;
-    --ds-surface-hover: #1C2129;
-    --ds-glass: rgba(22, 27, 34, 0.65);
-    --ds-glass-border: rgba(255, 255, 255, 0.06);
-    --ds-glass-strong: rgba(30, 36, 46, 0.85);
+    --ds-bg: #09090b;
+    --ds-bg-alt: #000000;
+    --ds-surface: #18181b;
+    --ds-surface-hover: #27272a;
+    --ds-glass: rgba(24, 24, 27, 0.65);
+    --ds-glass-border: rgba(255, 255, 255, 0.08);
+    --ds-glass-strong: rgba(39, 39, 42, 0.85);
 
-    --ds-accent: #1F6FEB;
-    --ds-accent-light: #58A6FF;
-    --ds-cyan: #00D4AA;
-    --ds-teal: #0ABAB5;
-    --ds-gradient: linear-gradient(135deg, #00D4AA 0%, #1F6FEB 50%, #A855F7 100%);
-    --ds-gradient-text: linear-gradient(135deg, #00D4AA, #58A6FF);
-    --ds-gradient-subtle: linear-gradient(135deg, rgba(0, 212, 170, 0.15), rgba(31, 111, 235, 0.15));
+    --ds-accent: #6366f1;
+    --ds-accent-light: #818cf8;
+    --ds-cyan: #06b6d4;
+    --ds-teal: #14b8a6;
+    --ds-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #d946ef 100%);
+    --ds-gradient-text: linear-gradient(135deg, #60a5fa, #c084fc);
+    --ds-gradient-subtle: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
 
-    --ds-text: #E6EDF3;
-    --ds-text-secondary: #8B949E;
-    --ds-text-muted: #484F58;
+    --ds-text: #fafafa;
+    --ds-text-secondary: #a1a1aa;
+    --ds-text-muted: #71717a;
 
-    --ds-success: #2EA043;
-    --ds-warning: #D29922;
-    --ds-error: #F85149;
+    --ds-success: #22c55e;
+    --ds-warning: #eab308;
+    --ds-error: #ef4444;
 
     --ds-border: rgba(255, 255, 255, 0.08);
-    --ds-border-strong: rgba(255, 255, 255, 0.12);
-    --ds-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    --ds-shadow-glow: 0 0 40px rgba(0, 212, 170, 0.08);
+    --ds-border-strong: rgba(255, 255, 255, 0.15);
+    --ds-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --ds-shadow-glow: 0 0 40px rgba(139, 92, 246, 0.15);
 
     --ds-radius: 16px;
     --ds-radius-sm: 10px;
     --ds-radius-pill: 999px;
-    --ds-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --ds-transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ── Keyframe Animations ──────────────────────────────────────────────────── */
@@ -225,6 +225,7 @@ label {
 .glass-card:hover {
     border-color: var(--ds-border-strong);
     box-shadow: var(--ds-shadow), var(--ds-shadow-glow);
+    transform: translateY(-2px);
 }
 
 /* ── Upload Zone ──────────────────────────────────────────────────────────── */
@@ -237,9 +238,9 @@ label {
 }
 
 .stFileUploader>div:hover {
-    border-color: var(--ds-cyan) !important;
+    border-color: var(--ds-accent) !important;
     background: var(--ds-surface-hover) !important;
-    box-shadow: 0 0 24px rgba(0, 212, 170, 0.06);
+    box-shadow: 0 0 24px rgba(99, 102, 241, 0.1);
 }
 
 .stFileUploader label {
@@ -255,7 +256,7 @@ label {
 }
 
 .stFileUploader [data-testid="stFileUploaderDropzone"]:hover {
-    border-color: var(--ds-cyan) !important;
+    border-color: var(--ds-accent) !important;
     background: var(--ds-surface-hover) !important;
 }
 
@@ -279,7 +280,7 @@ label {
 
 .stFileUploader button:hover,
 .stFileUploader [data-testid="stBaseButton-secondary"]:hover {
-    border-color: var(--ds-cyan) !important;
+    border-color: var(--ds-accent) !important;
     color: var(--ds-text) !important;
     background: var(--ds-glass-strong) !important;
 }
@@ -309,7 +310,7 @@ label {
 .stTextInput>div>div:focus-within,
 .stTextArea>div>div:focus-within {
     border-color: var(--ds-accent) !important;
-    box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.15) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
 }
 
 .stTextInput input,
@@ -335,12 +336,12 @@ label {
     background: var(--ds-gradient) !important;
     border: none !important;
     color: #fff !important;
-    box-shadow: 0 4px 16px rgba(0, 212, 170, 0.2);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25);
 }
 
 .stButton>button[kind="primary"]:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(0, 212, 170, 0.3);
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
 }
 
 .stButton>button[kind="secondary"] {
@@ -350,7 +351,7 @@ label {
 }
 
 .stButton>button[kind="secondary"]:hover {
-    border-color: var(--ds-cyan) !important;
+    border-color: var(--ds-accent) !important;
     color: var(--ds-text) !important;
     background: var(--ds-surface-hover) !important;
 }
@@ -445,6 +446,7 @@ label {
 [data-testid="stMetric"]:hover {
     border-color: var(--ds-border-strong);
     box-shadow: var(--ds-shadow-glow);
+    transform: translateY(-2px);
 }
 
 [data-testid="stMetricLabel"] {
@@ -462,10 +464,18 @@ label {
 }
 
 /* ── Expander ─────────────────────────────────────────────────────────────── */
-.streamlit-expanderHeader {
+[data-testid="stExpander"] summary {
     font-weight: 600 !important;
     color: var(--ds-text) !important;
     font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+[data-testid="stExpander"] summary p {
+    font-weight: 600 !important;
+    margin-bottom: 0 !important;
 }
 
 [data-testid="stExpander"] {
@@ -496,7 +506,7 @@ pre {
 
 /* ── Spinner ──────────────────────────────────────────────────────────────── */
 .stSpinner>div {
-    color: var(--ds-cyan) !important;
+    color: var(--ds-accent) !important;
 }
 
 /* ── Divider ──────────────────────────────────────────────────────────────── */
@@ -530,8 +540,9 @@ hr {
 }
 
 .stDownloadButton>button:hover {
-    border-color: var(--ds-cyan) !important;
+    border-color: var(--ds-accent) !important;
     color: var(--ds-text) !important;
+    background: var(--ds-surface-hover) !important;
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */
@@ -670,7 +681,7 @@ hr {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--ds-cyan);
+    color: var(--ds-accent-light);
     margin-bottom: 6px;
 }
 
@@ -730,7 +741,11 @@ hr {
 }
 
 .report-section-body strong {
-    color: var(--ds-cyan);
+    color: #fff;
+    background: rgba(99, 102, 241, 0.15);
+    padding: 0 4px;
+    border-radius: 4px;
+    font-weight: 600;
 }
 
 .report-section-body ul,
@@ -746,7 +761,7 @@ hr {
 }
 
 .report-section-body li::marker {
-    color: var(--ds-cyan);
+    color: var(--ds-accent);
 }
 
 /* ── Key Findings List ───────────────────────────────────────────────── */
@@ -816,7 +831,7 @@ hr {
 }
 
 .rec-icon {
-    color: var(--ds-cyan);
+    color: var(--ds-accent-light);
     font-size: 1rem;
     flex-shrink: 0;
     margin-top: 2px;
@@ -829,14 +844,19 @@ hr {
 }
 
 /* ── Results Table Enhancement ───────────────────────────────────────── */
-.report-section .stMarkdown table {
+.stMarkdown table {
     width: 100%;
     border-collapse: collapse;
     margin: 0.75rem 0;
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-sm);
+    overflow: hidden;
+    display: block;
 }
 
-.report-section .stMarkdown th {
-    background: var(--ds-surface) !important;
+.stMarkdown th {
+    background: var(--ds-surface-hover) !important;
     color: var(--ds-text) !important;
     font-weight: 600;
     font-size: 0.82rem;
@@ -845,15 +865,16 @@ hr {
     text-align: left;
 }
 
-.report-section .stMarkdown td {
+.stMarkdown td {
     padding: 8px 14px;
     font-size: 0.84rem;
     border-bottom: 1px solid var(--ds-border);
     color: var(--ds-text);
+    background: var(--ds-surface);
 }
 
-.report-section .stMarkdown tr:hover td {
-    background: var(--ds-surface-hover);
+.stMarkdown tr:hover td {
+    background: var(--ds-glass-strong);
 }
 
 /* ── Chart Gallery ───────────────────────────────────────────────────── */

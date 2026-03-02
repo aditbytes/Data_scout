@@ -85,22 +85,22 @@ def render_results(response: dict, execution_time_ms: int = 0) -> None:
         findings_html = ""
         for i, finding in enumerate(findings, 1):
             findings_html += f"""
-            <div class="finding-item">
-                <div class="finding-number">{i}</div>
-                <div class="finding-text">{finding}</div>
-            </div>
-            """
+<div class="finding-item">
+    <div class="finding-number">{i}</div>
+    <div class="finding-text">{finding}</div>
+</div>
+"""
         st.markdown(f"""
-        <div class="report-section">
-            <div class="report-section-header">
-                <span class="section-icon">🔍</span>
-                <span class="section-title">Key Findings</span>
-            </div>
-            <div class="report-section-body">
-                {findings_html}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="report-section">
+    <div class="report-section-header">
+        <span class="section-icon">🔍</span>
+        <span class="section-title">Key Findings</span>
+    </div>
+    <div class="report-section-body">
+        {findings_html}
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
     # ── 3. Methodology ─────────────────────────────────────────────────
     methodology = response.get('methodology', '')
@@ -198,19 +198,19 @@ def render_results(response: dict, execution_time_ms: int = 0) -> None:
         recs_html = ""
         for step in steps:
             recs_html += f"""
-            <div class="recommendation-item">
-                <span class="rec-icon">💡</span>
-                <span class="rec-text">{step}</span>
-            </div>
-            """
+<div class="recommendation-item">
+    <span class="rec-icon">💡</span>
+    <span class="rec-text">{step}</span>
+</div>
+"""
         st.markdown(f"""
-        <div class="report-section">
-            <div class="report-section-header">
-                <span class="section-icon">🚀</span>
-                <span class="section-title">Recommendations</span>
-            </div>
-            <div class="report-section-body">
-                {recs_html}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="report-section">
+    <div class="report-section-header">
+        <span class="section-icon">🚀</span>
+        <span class="section-title">Recommendations</span>
+    </div>
+    <div class="report-section-body">
+        {recs_html}
+    </div>
+</div>
+""", unsafe_allow_html=True)
